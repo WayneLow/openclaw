@@ -179,4 +179,55 @@ describe("buildInboundUserContextPrefix", () => {
     const conversationInfo = parseConversationInfoPayload(text);
     expect(conversationInfo["sender"]).toBe("user@example.com");
   });
+
+  it.only("visualize full output with all parameters", () => {
+    const text = buildInboundUserContextPrefix({
+      ChatType: "group",
+      MessageSid: "msg-12345",
+      MessageSidFull: "telegram:msg-12345-full",
+      ReplyToId: "msg-12340",
+      SenderId: "289522496",
+      SenderName: "Wayne Low",
+      SenderUsername: "waynelow",
+      SenderTag: "Wayne Low#1234",
+      SenderE164: "+1234567890",
+      ConversationLabel: "dev-team",
+      GroupSubject: "OpenClaw Development",
+      GroupChannel: "#general",
+      GroupSpace: "Engineering",
+      ThreadLabel: "API discussion",
+      IsForum: true,
+      WasMentioned: true,
+      ReplyToBody: "Can you check the API status?",
+      ReplyToSender: "Alice Chen",
+      ReplyToIsQuote: false,
+      ForwardedFrom: "Bob Smith",
+      ForwardedFromType: "user",
+      ForwardedFromUsername: "bobsmith",
+      ForwardedFromTitle: "Tech Lead",
+      ForwardedFromSignature: "Bob",
+      ForwardedFromChatType: "private",
+      ForwardedDate: 1706000000000,
+      ThreadStarterBody: "Let's discuss the new API endpoints",
+      InboundHistory: [
+        {
+          sender: "Alice Chen",
+          timestamp: 1706000060000,
+          body: "I noticed the /health endpoint is slow",
+        },
+        { sender: "Bob Smith", timestamp: 1706000120000, body: "Same here, latency is >2s" },
+        { sender: "Wayne Low", timestamp: 1706000180000, body: "Let me investigate" },
+      ],
+    } as TemplateContext);
+
+    console.log("\n" + "=".repeat(80));
+    console.log("buildInboundUserContextPrefix — FULL OUTPUT");
+    console.log("=".repeat(80));
+    console.log(text);
+    console.log("=".repeat(80));
+    console.log(`Total length: ${text.length} characters`);
+    console.log("=".repeat(80) + "\n");
+
+    expect(text).toContain("Conversation info (untrusted metadata):");
+  });
 });
