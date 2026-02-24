@@ -1,8 +1,13 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SILENT_REPLY_TOKEN } from "../auto-reply/tokens.js";
 import { typedCases } from "../test-utils/typed-cases.js";
+import { buildBootstrapContextFiles } from "./pi-embedded-helpers/bootstrap.js";
 import { buildSubagentSystemPrompt } from "./subagent-announce.js";
 import { buildAgentSystemPrompt, buildRuntimeLine } from "./system-prompt.js";
+import { loadWorkspaceBootstrapFiles } from "./workspace.ts";
+
+const SAMPLES_DIR = join(import.meta.dirname, "../../samples-markdown");
 
 describe("buildAgentSystemPrompt", () => {
   it("formats owner section for plain, hash, and missing owner lists", () => {
@@ -633,5 +638,110 @@ describe("buildSubagentSystemPrompt", () => {
         expect(prompt, testCase.name).toContain("spawned by the main agent");
       }
     }
+  });
+
+  it.only("visualize full prompt with all parameters", async () => {
+    const bootstrapFiles = await loadWorkspaceBootstrapFiles(SAMPLES_DIR);
+    const contextFiles = buildBootstrapContextFiles(bootstrapFiles);
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      defaultThinkLevel: "low",
+      reasoningLevel: "stream",
+      extraSystemPrompt: "You are in a group chat called #general.",
+      ownerNumbers: ["+1234567890", "+0987654321"],
+      reasoningTagHint: true,
+      toolNames: [
+        "read",
+        "write",
+        "edit",
+        "apply_patch",
+        "grep",
+        "find",
+        "ls",
+        "exec",
+        "process",
+        "web_search",
+        "web_fetch",
+        "browser",
+        "canvas",
+        "nodes",
+        "cron",
+        "message",
+        "gateway",
+        "agents_list",
+        "sessions_list",
+        "sessions_history",
+        "sessions_send",
+        "sessions_spawn",
+        "subagents",
+        "session_status",
+        "image",
+        "memory_search",
+        "custom_tool",
+      ],
+      toolSummaries: {
+        memory_search: "Search long-term memory",
+        custom_tool: "A custom plugin tool",
+      },
+      modelAliasLines: [
+        "- Opus: anthropic/claude-opus-4-5",
+        "- Sonnet: anthropic/claude-sonnet-4-5",
+        "- Haiku: anthropic/claude-haiku-3-5",
+      ],
+      userTimezone: "America/New_York",
+      userTime: "Monday, February 23rd, 2026 — 10:30 AM",
+      userTimeFormat: "12",
+      contextFiles,
+      skillsPrompt:
+        "<available_skills>\n  <skill>\n    <name>commit</name>\n    <location>/skills/commit/SKILL.md</location>\n  </skill>\n  <skill>\n    <name>review-pr</name>\n    <location>/skills/review-pr/SKILL.md</location>\n  </skill>\n</available_skills>",
+      heartbeatPrompt: "heartbeat-check",
+      docsPath: "/tmp/openclaw/docs",
+      workspaceNotes: [
+        "Note: This workspace has a custom .editorconfig.",
+        "Reminder: Always run tests before committing.",
+      ],
+      ttsHint: "Voice (TTS) is enabled. Keep responses concise for speech.",
+      promptMode: "full",
+      runtimeInfo: {
+        agentId: "main",
+        host: "waynes-macbook",
+        os: "macOS",
+        arch: "arm64",
+        node: "v22.12.0",
+        model: "anthropic/claude-opus-4-5",
+        defaultModel: "anthropic/claude-opus-4-5",
+        shell: "/bin/zsh",
+        channel: "telegram",
+        capabilities: ["inlineButtons", "reactions"],
+        repoRoot: "/Users/wayne/code/openclaw",
+      },
+      messageToolHints: ["Use buttons for yes/no prompts.", "Prefer short messages on mobile."],
+      sandboxInfo: {
+        enabled: true,
+        workspaceDir: "/tmp/sandbox-host",
+        containerWorkspaceDir: "/workspace",
+        workspaceAccess: "rw",
+        agentWorkspaceMount: "/agent-workspace",
+        browserBridgeUrl: "http://localhost:9222",
+        browserNoVncUrl: "http://localhost:6080",
+        hostBrowserAllowed: true,
+        elevated: { allowed: true, defaultLevel: "ask" },
+      },
+      reactionGuidance: {
+        level: "extensive",
+        channel: "Telegram",
+      },
+      memoryCitationsMode: "on",
+    });
+
+    console.log("\n" + "=".repeat(100));
+    console.log("FULL SYSTEM PROMPT OUTPUT");
+    console.log("=".repeat(100));
+    console.log(prompt);
+    console.log("=".repeat(100));
+    console.log(`Total length: ${prompt.length} characters`);
+    console.log("=".repeat(100) + "\n");
+
+    expect(prompt).toContain("You are a personal assistant running inside OpenClaw.");
   });
 });
